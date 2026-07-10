@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LearnPath — Learn at your own pace</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  .hero{
+    display:grid; grid-template-columns:1.1fr .9fr; gap:48px; align-items:center;
+    padding:80px 32px 60px; max-width:1180px; margin:0 auto;
+  }
+  .eyebrow{ font-family:var(--font-mono); font-size:12.5px; color:var(--gold); font-weight:500; letter-spacing:.04em; margin-bottom:14px; display:block; }
+  .hero h1{ font-size:44px; line-height:1.12; max-width:520px; }
+  .hero p.lead{ font-size:16.5px; max-width:460px; }
+  .hero-cta{ display:flex; gap:12px; margin-top:26px; }
+  .hero-art{ position:relative; }
+  .stats-row{ display:flex; gap:28px; margin-top:36px; }
+  .stat b{ display:block; font-family:var(--font-display); font-size:26px; color:var(--ink); }
+  .stat span{ font-size:12.5px; color:var(--ink-soft); }
+
+  .features{ background:var(--paper-dim); padding:64px 32px; border-top:1px solid var(--border); border-bottom:1px solid var(--border); }
+  .features-grid{ max-width:1100px; margin:0 auto; display:grid; grid-template-columns:repeat(4,1fr); gap:20px; }
+  .feature{ background:var(--card); border:1px solid var(--border); border-radius:var(--radius); padding:22px; }
+  .feature .num{ font-family:var(--font-mono); font-size:12px; color:var(--gold); margin-bottom:10px; }
+  .feature h4{ font-size:15.5px; margin-bottom:6px; }
+  .feature p{ font-size:13.5px; margin:0; }
+
+  .cta-band{ text-align:center; padding:70px 32px; max-width:640px; margin:0 auto; }
+
+  footer{ border-top:1px solid var(--border); padding:26px 32px; text-align:center; color:var(--ink-soft); font-size:13px; }
+
+  @media (max-width:860px){
+    .hero{ grid-template-columns:1fr; padding-top:48px; }
+    .features-grid{ grid-template-columns:repeat(2,1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><span class="mark"></span> LearnPath</div>
+  <nav>
+    <a href="courses.html">Browse courses</a>
+    <a href="auth.html">Log in</a>
+    <a href="auth.html?tab=register" class="btn btn-primary btn-sm">Get started</a>
+  </nav>
+</div>
+
+<section class="hero">
+  <div>
+    <span class="eyebrow">Module 6 — a place to keep learning</span>
+    <h1>Follow the path.<br>Finish what you start.</h1>
+    <p class="lead">LearnPath turns a pile of course videos into a walkable trail — one step at a time, with your progress marked as you go.</p>
+    <div class="hero-cta">
+      <a href="courses.html" class="btn btn-primary">Browse courses</a>
+      <a href="auth.html?tab=register" class="btn btn-outline">Create free account</a>
+    </div>
+    <div class="stats-row">
+      <div class="stat"><b>128</b><span>Courses live</span></div>
+      <div class="stat"><b>4,300+</b><span>Learners enrolled</span></div>
+      <div class="stat"><b>92%</b><span>Course completion rate</span></div>
+    </div>
+  </div>
+
+  <div class="hero-art card card-pad">
+    <p class="text-sm text-muted mb-0" style="font-weight:600;color:var(--ink);margin-bottom:14px;">Your path — UX Design Fundamentals</p>
+    <div class="path">
+      <div class="path-step done"><div class="title">Intro to UX</div><div class="sub">Completed · 12 min</div></div>
+      <div class="path-step done"><div class="title">User research basics</div><div class="sub">Completed · 18 min</div></div>
+      <div class="path-step current"><div class="title">Wireframing</div><div class="sub">In progress · 9 of 22 min</div></div>
+      <div class="path-step"><div class="title">Usability testing</div><div class="sub">Locked</div></div>
+    </div>
+  </div>
+</section>
+
+<section class="features">
+  <div class="features-grid">
+    <div class="feature"><div class="num">01</div><h4>Browse &amp; enroll</h4><p>Filter courses by topic and level, then enroll in one click.</p></div>
+    <div class="feature"><div class="num">02</div><h4>Learn by module</h4><p>Video lessons, downloadable materials, and structured modules.</p></div>
+    <div class="feature"><div class="num">03</div><h4>Track progress</h4><p>See exactly how far along you are in every course you take.</p></div>
+    <div class="feature"><div class="num">04</div><h4>Earn certificates</h4><p>Finish a course and download a certificate to show for it.</p></div>
+  </div>
+</section>
+
+<section class="cta-band">
+  <h2 style="font-size:28px;">Ready to start your path?</h2>
+  <p>It takes less than a minute to create an account.</p>
+  <a href="auth.html?tab=register" class="btn btn-primary">Create free account</a>
+</section>
+
+<footer>© 2026 LearnPath. Built as a demo project — data is stored locally in your browser.</footer>
+
+</body>
+</html>

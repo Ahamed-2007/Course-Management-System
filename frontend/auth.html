@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LearnPath — Account</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  .auth-wrap{ max-width:420px; margin:0 auto; padding:56px 20px 80px; }
+  .auth-tabs{ display:flex; border:1px solid var(--border); border-radius:100px; padding:4px; margin-bottom:28px; background:var(--paper-dim); }
+  .auth-tabs button{
+    flex:1; border:none; background:transparent; padding:9px; font-family:var(--font-body); font-weight:600;
+    font-size:13.5px; color:var(--ink-soft); border-radius:100px; cursor:pointer;
+  }
+  .auth-tabs button.active{ background:var(--card); color:var(--blue); box-shadow:var(--shadow); }
+  .view{ display:none; }
+  .view.active{ display:block; }
+  .auth-head{ text-align:center; margin-bottom:24px; }
+  .auth-head .eyebrow{ font-family:var(--font-mono); font-size:11.5px; color:var(--gold); }
+  .switch-line{ text-align:center; font-size:13.5px; margin-top:16px; color:var(--ink-soft); }
+  .back-home{ display:inline-block; margin-bottom:18px; font-size:13px; color:var(--ink-soft); }
+  .role-toggle{ display:flex; gap:10px; margin-bottom:18px; }
+  .role-toggle label{
+    flex:1; border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px; text-align:center;
+    font-size:13px; font-weight:600; cursor:pointer; color:var(--ink-soft);
+  }
+  .role-toggle input{ display:none; }
+  .role-toggle input:checked + span{ color:var(--blue); }
+  .role-toggle label:has(input:checked){ border-color:var(--blue); background:#EEF3FB; }
+</style>
+</head>
+<body>
+
+<div class="auth-wrap">
+  <a class="back-home" href="index.html">← Back to home</a>
+
+  <div class="card card-pad">
+    <div class="auth-tabs">
+      <button data-view="login" class="active">Log in</button>
+      <button data-view="register">Register</button>
+      <button data-view="forgot">Forgot password</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div class="view active" id="view-login">
+      <div class="auth-head">
+        <span class="eyebrow">Module 1 — Authentication</span>
+        <h2 style="font-size:22px;">Welcome back</h2>
+        <p class="text-sm mb-0">Log in to keep walking your path.</p>
+      </div>
+      <div class="alert alert-error" id="login-alert"></div>
+      <form id="login-form" novalidate>
+        <div class="field">
+          <label for="login-email">Email</label>
+          <input type="email" id="login-email" required placeholder="you@example.com">
+        </div>
+        <div class="field">
+          <label for="login-password">Password</label>
+          <input type="password" id="login-password" required placeholder="••••••••">
+        </div>
+        <button class="btn btn-primary btn-block" type="submit">Log in</button>
+      </form>
+      <p class="switch-line">No account? <a href="#" data-goto="register">Register here</a></p>
+      <p class="switch-line text-sm">Demo admin — admin@learnpath.com / admin123</p>
+    </div>
+
+    <!-- REGISTER -->
+    <div class="view" id="view-register">
+      <div class="auth-head">
+        <span class="eyebrow">Module 1 — Authentication</span>
+        <h2 style="font-size:22px;">Create your account</h2>
+        <p class="text-sm mb-0">Start walking your first path in seconds.</p>
+      </div>
+      <div class="alert alert-error" id="register-alert"></div>
+      <form id="register-form" novalidate>
+        <div class="field">
+          <label for="reg-name">Full name</label>
+          <input type="text" id="reg-name" required placeholder="Jordan Lee">
+        </div>
+        <div class="field">
+          <label for="reg-email">Email</label>
+          <input type="email" id="reg-email" required placeholder="you@example.com">
+        </div>
+        <div class="field">
+          <label for="reg-password">Password</label>
+          <input type="password" id="reg-password" required placeholder="At least 6 characters">
+        </div>
+        <div class="field">
+          <label>I'm joining as</label>
+          <div class="role-toggle">
+            <label><input type="radio" name="role" value="student" checked><span>Student</span></label>
+            <label><input type="radio" name="role" value="admin"><span>Instructor / Admin</span></label>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-block" type="submit">Create account</button>
+      </form>
+      <p class="switch-line">Already have an account? <a href="#" data-goto="login">Log in</a></p>
+    </div>
+
+    <!-- FORGOT -->
+    <div class="view" id="view-forgot">
+      <div class="auth-head">
+        <span class="eyebrow">Module 1 — Authentication</span>
+        <h2 style="font-size:22px;">Reset your password</h2>
+        <p class="text-sm mb-0">Enter your email and we'll simulate sending a reset link.</p>
+      </div>
+      <div class="alert alert-success" id="forgot-alert"></div>
+      <form id="forgot-form" novalidate>
+        <div class="field">
+          <label for="forgot-email">Email</label>
+          <input type="email" id="forgot-email" required placeholder="you@example.com">
+        </div>
+        <button class="btn btn-primary btn-block" type="submit">Send reset link</button>
+      </form>
+      <p class="switch-line">Remembered it? <a href="#" data-goto="login">Back to log in</a></p>
+    </div>
+
+    <!-- RESET (reached via simulated link) -->
+    <div class="view" id="view-reset">
+      <div class="auth-head">
+        <span class="eyebrow">Module 1 — Authentication</span>
+        <h2 style="font-size:22px;">Set a new password</h2>
+        <p class="text-sm mb-0" id="reset-for-email">Resetting password for you@example.com</p>
+      </div>
+      <div class="alert alert-error" id="reset-alert"></div>
+      <form id="reset-form" novalidate>
+        <div class="field">
+          <label for="reset-password">New password</label>
+          <input type="password" id="reset-password" required placeholder="At least 6 characters">
+        </div>
+        <div class="field">
+          <label for="reset-password2">Confirm new password</label>
+          <input type="password" id="reset-password2" required placeholder="Repeat password">
+        </div>
+        <button class="btn btn-primary btn-block" type="submit">Update password</button>
+      </form>
+    </div>
+
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ---------- tiny local "backend" via localStorage ---------- */
+const DB = {
+  users(){ return JSON.parse(localStorage.getItem('lp_users') || '[]'); },
+  saveUsers(u){ localStorage.setItem('lp_users', JSON.stringify(u)); },
+  session(){ return JSON.parse(localStorage.getItem('lp_session') || 'null'); },
+  setSession(s){ localStorage.setItem('lp_session', JSON.stringify(s)); },
+};
+
+// seed a demo admin account once
+(function seed(){
+  const users = DB.users();
+  if(!users.find(u => u.email === 'admin@learnpath.com')){
+    users.push({ name:'Admin', email:'admin@learnpath.com', password:'admin123', role:'admin' });
+    DB.saveUsers(users);
+  }
+})();
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ---------- tab switching ---------- */
+const tabs = document.querySelectorAll('.auth-tabs button');
+const views = document.querySelectorAll('.view');
+function showView(name){
+  tabs.forEach(b => b.classList.toggle('active', b.dataset.view === name));
+  views.forEach(v => v.classList.toggle('active', v.id === 'view-' + name));
+}
+tabs.forEach(b => b.addEventListener('click', () => showView(b.dataset.view)));
+document.querySelectorAll('[data-goto]').forEach(a => {
+  a.addEventListener('click', e => { e.preventDefault(); showView(a.dataset.goto); });
+});
+
+// open on tab from ?tab= or #reset
+const params = new URLSearchParams(location.search);
+if(location.hash === '#reset'){
+  showView('reset');
+  document.getElementById('reset-for-email').textContent =
+    'Resetting password for ' + (params.get('email') || 'you@example.com');
+} else if(params.get('tab')){
+  showView(params.get('tab'));
+}
+
+/* ---------- LOGIN ---------- */
+document.getElementById('login-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const email = document.getElementById('login-email').value.trim().toLowerCase();
+  const pass = document.getElementById('login-password').value;
+  const alertBox = document.getElementById('login-alert');
+  const user = DB.users().find(u => u.email.toLowerCase() === email && u.password === pass);
+  if(!user){
+    alertBox.textContent = 'Email or password is incorrect.';
+    alertBox.classList.add('show');
+    return;
+  }
+  DB.setSession({ name:user.name, email:user.email, role:user.role });
+  toast('Welcome back, ' + user.name + '!');
+  setTimeout(() => location.href = 'dashboard.html', 500);
+});
+
+/* ---------- REGISTER ---------- */
+document.getElementById('register-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const name = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim().toLowerCase();
+  const pass = document.getElementById('reg-password').value;
+  const role = document.querySelector('input[name="role"]:checked').value;
+  const alertBox = document.getElementById('register-alert');
+
+  if(pass.length < 6){
+    alertBox.textContent = 'Password must be at least 6 characters.';
+    alertBox.classList.add('show');
+    return;
+  }
+  const users = DB.users();
+  if(users.find(u => u.email.toLowerCase() === email)){
+    alertBox.textContent = 'An account with that email already exists.';
+    alertBox.classList.add('show');
+    return;
+  }
+  users.push({ name, email, password:pass, role });
+  DB.saveUsers(users);
+  DB.setSession({ name, email, role });
+  toast('Account created — welcome, ' + name + '!');
+  setTimeout(() => location.href = 'dashboard.html', 500);
+});
+
+/* ---------- FORGOT PASSWORD ---------- */
+document.getElementById('forgot-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const email = document.getElementById('forgot-email').value.trim().toLowerCase();
+  const alertBox = document.getElementById('forgot-alert');
+  const exists = DB.users().find(u => u.email.toLowerCase() === email);
+  // for demo purposes we proceed either way, but message differs slightly
+  alertBox.textContent = exists
+    ? 'Reset link sent. Since this is a demo, click below to continue.'
+    : 'If that email exists, a reset link has been sent. Since this is a demo, click below to continue.';
+  alertBox.classList.add('show');
+  const btn = document.createElement('a');
+  btn.href = 'auth.html?email=' + encodeURIComponent(email) + '#reset';
+  btn.className = 'btn btn-outline btn-block mt-16';
+  btn.textContent = 'Continue to reset password →';
+  alertBox.after(btn);
+});
+
+/* ---------- RESET PASSWORD ---------- */
+document.getElementById('reset-form').addEventListener('submit', e => {
+  e.preventDefault();
+  const email = (params.get('email') || '').toLowerCase();
+  const p1 = document.getElementById('reset-password').value;
+  const p2 = document.getElementById('reset-password2').value;
+  const alertBox = document.getElementById('reset-alert');
+
+  if(p1.length < 6){ alertBox.textContent = 'Password must be at least 6 characters.'; alertBox.classList.add('show'); return; }
+  if(p1 !== p2){ alertBox.textContent = 'Passwords do not match.'; alertBox.classList.add('show'); return; }
+
+  const users = DB.users();
+  const user = users.find(u => u.email.toLowerCase() === email);
+  if(!user){ alertBox.textContent = 'Could not find that account.'; alertBox.classList.add('show'); return; }
+  user.password = p1;
+  DB.saveUsers(users);
+  toast('Password updated — please log in.');
+  setTimeout(() => { location.href = 'auth.html'; showView('login'); }, 600);
+});
+</script>
+</body>
+</html>

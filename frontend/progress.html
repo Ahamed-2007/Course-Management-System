@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LearnPath — Progress</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  .prog-card{ display:flex; gap:20px; align-items:center; padding:20px; margin-bottom:16px; }
+  .prog-card .info{ flex:1; }
+  .prog-card .path{ margin-top:14px; }
+  .cert-wrap{ max-width:760px; margin:0 auto; }
+  .certificate{
+    border:2px solid var(--gold); border-radius:var(--radius); padding:56px 48px; text-align:center;
+    background:
+      radial-gradient(circle at 0% 0%, rgba(217,142,59,.08), transparent 40%),
+      radial-gradient(circle at 100% 100%, rgba(46,90,172,.08), transparent 40%),
+      var(--card);
+    position:relative;
+  }
+  .certificate::before{
+    content:''; position:absolute; inset:10px; border:1px solid var(--border); border-radius:6px; pointer-events:none;
+  }
+  .certificate .eyebrow{ font-family:var(--font-mono); font-size:11.5px; letter-spacing:.1em; color:var(--gold); text-transform:uppercase; }
+  .certificate h1{ font-size:34px; margin:14px 0 4px; }
+  .certificate .name{ font-family:var(--font-display); font-size:26px; color:var(--blue); margin:18px 0 6px; }
+  .certificate .course-name{ font-size:18px; font-weight:600; margin-bottom:18px; }
+  .certificate .seal{ width:70px;height:70px; border-radius:50%; border:3px solid var(--gold); display:flex; align-items:center; justify-content:center; margin:20px auto 0; color:var(--gold); font-family:var(--font-display); font-weight:700; }
+  .certificate .sig-row{ display:flex; justify-content:space-between; margin-top:36px; padding:0 30px; }
+  .certificate .sig{ font-family:var(--font-display); font-size:15px; border-top:1px solid var(--border); padding-top:6px; width:160px; }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><span class="mark"></span> LearnPath</div>
+  <nav>
+    <a href="courses.html">Browse courses</a>
+    <a href="dashboard.html" class="btn btn-outline btn-sm">Dashboard</a>
+  </nav>
+</div>
+
+<div class="shell">
+  <aside class="rail" id="rail"></aside>
+  <main class="main" id="view"></main>
+</div>
+
+<script>
+const DB = {
+  session(){ return JSON.parse(localStorage.getItem('lp_session') || 'null'); },
+  courses(){ return JSON.parse(localStorage.getItem('lp_courses') || '[]'); },
+  enrollments(){ return JSON.parse(localStorage.getItem('lp_enrollments') || '[]'); },
+};
+const session = DB.session();
+if(!session){ location.href = 'auth.html'; }
+document.getElementById('rail').innerHTML = [
+  ['dashboard.html','⌂ Dashboard'],['courses.html','▤ Browse courses'],['courses.html#my','✓ My courses'],['progress.html','◐ Progress'],['dashboard.html#notifications','🔔 Notifications']
+].map(([href,label]) => `<a href="${href}" class="${href==='progress.html'?'active':''}">${label}</a>`).join('');
+
+function ring(pct){
+  const r = 36, c = 2*Math.PI*r;
+  const offset = c - (pct/100)*c;
+  return `<div class="ring"><svg width="88" height="88"><circle cx="44" cy="44" r="${r}" stroke="var(--paper-dim)" stroke-width="8" fill="none"/>
+    <circle cx="44" cy="44" r="${r}" stroke="var(--gold)" stroke-width="8" fill="none" stroke-linecap="round"
+      stroke-dasharray="${c}" stroke-dashoffset="${offset}"/></svg><div class="pct">${pct}%</div></div>`;
+}
+
+function viewOverview(){
+  const courses = DB.courses();
+  const mine = DB.enrollments().filter(e=>e.email===session.email)
+    .map(e => ({...e, course: courses.find(c=>c.id===e.courseId)})).filter(x=>x.course);
+
+  document.getElementById('view').innerHTML = `
+    <h1 style="font-size:24px;">Your progress</h1>
+    <p class="mb-0">Track how far you've come in every course.</p>
+    <div class="mt-24">
+    ${mine.length ? mine.map(e => {
+      const total = e.course.modules.reduce((s,m)=>s+m.lessons.length,0);
+      const pct = total ? Math.round((e.completed.length/total)*100) : 0;
+      const flat = []; e.course.modules.forEach((m,mi)=>m.lessons.forEach((l,li)=>flat.push({id:`${mi}-${li}`,title:l.title})));
+      return `
+      <div class="card prog-card">
+        ${ring(pct)}
+        <div class="info">
+          <strong>${e.course.title}</strong>
+          <p class="text-sm mb-0">${e.completed.length} of ${total} lessons complete</p>
+          <div class="path mt-8">
+            ${flat.slice(0,4).map(l => `<span class="badge ${e.completed.includes(l.id)?'badge-green':'badge-muted'}" style="margin-right:6px;">${l.title}</span>`).join('')}
+            ${flat.length>4 ? `<span class="badge badge-muted">+${flat.length-4} more</span>` : ''}
+          </div>
+        </div>
+        <div>
+          ${pct===100
+            ? `<a class="btn btn-gold btn-sm" href="#cert-${e.course.id}">View certificate</a>`
+            : `<a class="btn btn-outline btn-sm" href="learning.html?course=${e.course.id}">Continue</a>`}
+        </div>
+      </div>`;
+    }).join('') : `<div class="empty-state card"><div class="mark-lg">◐</div>No progress yet — enroll in a course to start tracking.<div class="mt-16"><a href="courses.html" class="btn btn-primary btn-sm">Browse courses</a></div></div>`}
+    </div>
+  `;
+}
+
+function viewCertificate(courseId){
+  const course = DB.courses().find(c=>c.id===courseId);
+  const e = DB.enrollments().find(x=>x.email===session.email && x.courseId===courseId);
+  const total = course.modules.reduce((s,m)=>s+m.lessons.length,0);
+  const complete = e && e.completed.length === total;
+
+  document.getElementById('view').innerHTML = `
+    <a href="#" id="back-link" class="text-sm">← Back to progress</a>
+    <div class="cert-wrap mt-16">
+      ${complete ? `
+      <div class="certificate">
+        <div class="eyebrow">Certificate of Completion</div>
+        <h1>LearnPath</h1>
+        <p class="mb-0 text-sm">This certifies that</p>
+        <div class="name">${session.name}</div>
+        <p class="mb-0 text-sm">has successfully completed</p>
+        <div class="course-name">${course.title}</div>
+        <div class="seal">LP</div>
+        <div class="sig-row">
+          <div class="sig">Instructor<br>${course.instructor}</div>
+          <div class="sig">Date<br>${new Date().toLocaleDateString()}</div>
+        </div>
+      </div>
+      <div class="center mt-24"><button class="btn btn-primary" onclick="window.print()">Download / Print certificate</button></div>
+      ` : `<div class="empty-state card"><div class="mark-lg">◐</div>You haven't finished this course yet — complete every lesson to unlock your certificate.
+      <div class="mt-16"><a class="btn btn-primary btn-sm" href="learning.html?course=${courseId}">Resume course</a></div></div>`}
+    </div>
+  `;
+  document.getElementById('back-link').addEventListener('click', e=>{e.preventDefault(); location.hash='';});
+}
+
+function route(){
+  const h = location.hash.replace('#','');
+  const params = new URLSearchParams(location.search);
+  if(h.startsWith('cert-')) return viewCertificate(h.replace('cert-',''));
+  if(params.get('course')) return viewCertificate(params.get('course'));
+  viewOverview();
+}
+window.addEventListener('hashchange', route);
+route();
+</script>
+</body>
+</html>

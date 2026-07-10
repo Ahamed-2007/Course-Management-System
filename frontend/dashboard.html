@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LearnPath — Dashboard</title>
+<link rel="stylesheet" href="styles.css">
+<style>
+  .greet{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:28px; flex-wrap:wrap; gap:16px; }
+  .kpis{ display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:32px; }
+  .kpi{ padding:18px; }
+  .kpi .val{ font-family:var(--font-display); font-size:28px; }
+  .kpi .lbl{ font-size:12.5px; color:var(--ink-soft); }
+  .two-col{ display:grid; grid-template-columns:1.4fr 1fr; gap:20px; align-items:start; }
+  .continue-card{ display:flex; gap:16px; align-items:center; padding:16px; border-bottom:1px solid var(--border); }
+  .continue-card:last-child{ border-bottom:none; }
+  .continue-card .thumb-sm{ width:56px;height:56px;border-radius:8px; background:linear-gradient(135deg,var(--blue),var(--blue-dark)); flex-shrink:0; }
+  .continue-card .info{ flex:1; }
+  .continue-card .bar{ height:6px; background:var(--paper-dim); border-radius:100px; margin-top:6px; overflow:hidden; }
+  .continue-card .bar > div{ height:100%; background:var(--gold); }
+  .notif-item{ display:flex; gap:12px; padding:14px 0; border-bottom:1px solid var(--border); }
+  .notif-item:last-child{ border-bottom:none; }
+  .notif-dot{ width:8px;height:8px;border-radius:50%; background:var(--blue); margin-top:6px; flex-shrink:0; }
+  .notif-item.read .notif-dot{ background:var(--border); }
+  .notif-item .body-txt{ font-size:13.5px; }
+  .notif-item .time{ font-size:11.5px; color:var(--ink-soft); }
+  .admin-table-card{ margin-bottom:24px; }
+  @media (max-width:900px){ .kpis{ grid-template-columns:repeat(2,1fr); } .two-col{ grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand"><span class="mark"></span> LearnPath</div>
+  <nav>
+    <a href="courses.html">Browse courses</a>
+    <span id="user-chip" class="text-sm text-muted"></span>
+    <a href="#" id="logout-link" class="btn btn-outline btn-sm">Log out</a>
+  </nav>
+</div>
+
+<div class="shell">
+  <aside class="rail" id="rail"></aside>
+  <main class="main" id="main-content">
+    <!-- filled by JS based on role -->
+  </main>
+</div>
+
+<script>
+const DB = {
+  users(){ return JSON.parse(localStorage.getItem('lp_users') || '[]'); },
+  saveUsers(u){ localStorage.setItem('lp_users', JSON.stringify(u)); },
+  session(){ return JSON.parse(localStorage.getItem('lp_session') || 'null'); },
+  courses(){ return JSON.parse(localStorage.getItem('lp_courses') || '[]'); },
+  saveCourses(c){ localStorage.setItem('lp_courses', JSON.stringify(c)); },
+  enrollments(){ return JSON.parse(localStorage.getItem('lp_enrollments') || '[]'); },
+  saveEnrollments(e){ localStorage.setItem('lp_enrollments', JSON.stringify(e)); },
+  notifications(){ return JSON.parse(localStorage.getItem('lp_notifications') || '[]'); },
+  saveNotifications(n){ localStorage.setItem('lp_notifications', JSON.stringify(n)); },
+};
+
+/* ---- seed demo data once ---- */
+(function seed(){
+  if(DB.users().length === 0){
+    DB.saveUsers([{ name:'Admin', email:'admin@learnpath.com', password:'admin123', role:'admin' }]);
+  }
+  if(DB.courses().length === 0){
+    DB.saveCourses([
+      { id:'c1', title:'UX Design Fundamentals', category:'Design', level:'Beginner', instructor:'Admin',
+        description:'Learn the core principles of user experience design, from research to wireframes.',
+        modules:[
+          { title:'Getting started', lessons:[{title:'Intro to UX', duration:'12 min'},{title:'User research basics', duration:'18 min'}]},
+          { title:'Designing', lessons:[{title:'Wireframing', duration:'22 min'},{title:'Usability testing', duration:'15 min'}]}
+        ]},
+      { id:'c2', title:'JavaScript for Beginners', category:'Development', level:'Beginner', instructor:'Admin',
+        description:'A hands-on introduction to JavaScript — variables, functions, and the DOM.',
+        modules:[
+          { title:'Fundamentals', lessons:[{title:'Variables & types', duration:'14 min'},{title:'Functions', duration:'16 min'}]},
+          { title:'Working with the browser', lessons:[{title:'The DOM', duration:'20 min'},{title:'Events', duration:'17 min'}]}
+        ]},
+      { id:'c3', title:'Data Analysis with Spreadsheets', category:'Data', level:'Intermediate', instructor:'Admin',
+        description:'Turn raw spreadsheet data into clear, defensible insights.',
+        modules:[
+          { title:'Cleaning data', lessons:[{title:'Finding errors', duration:'11 min'},{title:'Formatting', duration:'9 min'}]},
+          { title:'Analyzing', lessons:[{title:'Pivot tables', duration:'19 min'},{title:'Charts', duration:'13 min'}]}
+        ]},
+      { id:'c4', title:'Public Speaking Essentials', category:'Business', level:'Beginner', instructor:'Admin',
+        description:'Build the confidence and structure to speak clearly in front of any audience.',
+        modules:[
+          { title:'Foundations', lessons:[{title:'Managing nerves', duration:'10 min'},{title:'Structuring a talk', duration:'14 min'}]}
+        ]}
+    ]);
+  }
+  if(DB.notifications().length === 0){
+    DB.saveNotifications([
+      { id:'n1', to:'all', title:'Welcome to LearnPath', body:'Your account is ready — enroll in your first course to get started.', date:'2026-06-28', read:false },
+      { id:'n2', to:'all', title:'New course added', body:'Public Speaking Essentials is now available in Business.', date:'2026-06-30', read:false },
+      { id:'n3', to:'all', title:'Keep your streak going', body:'You have not opened a lesson in a few days — pick up where you left off.', date:'2026-07-02', read:true },
+    ]);
+  }
+})();
+
+const session = DB.session();
+if(!session){ location.href = 'auth.html'; }
+
+document.getElementById('user-chip').textContent = session.name + ' · ' + (session.role === 'admin' ? 'Admin' : 'Student');
+document.getElementById('logout-link').addEventListener('click', e => {
+  e.preventDefault();
+  localStorage.removeItem('lp_session');
+  location.href = 'index.html';
+});
+
+function railHTML(active){
+  const items = session.role === 'admin'
+    ? [['dashboard.html','⌂ Dashboard'],['courses.html','▤ Manage courses'],['dashboard.html#notifications','🔔 Notifications']]
+    : [['dashboard.html','⌂ Dashboard'],['courses.html','▤ Browse courses'],['courses.html#my','✓ My courses'],['progress.html','◐ Progress'],['dashboard.html#notifications','🔔 Notifications']];
+  return items.map(([href,label]) =>
+    `<a href="${href}" class="${href.split('#')[0]===active?'active':''}">${label}</a>`).join('');
+}
+document.getElementById('rail').innerHTML = railHTML('dashboard.html');
+
+function renderNotifications(){
+  const notes = DB.notifications();
+  return `
+  <div class="card card-pad" id="notifications">
+    <div class="flex-between mb-0"><h3 style="font-size:16px;">Notifications</h3>
+      <button class="btn btn-outline btn-sm" onclick="markAllRead()">Mark all as read</button></div>
+    <div class="mt-16">
+      ${notes.map(n => `
+        <div class="notif-item ${n.read?'read':''}">
+          <div class="notif-dot"></div>
+          <div>
+            <div class="body-txt"><strong>${n.title}</strong> — ${n.body}</div>
+            <div class="time">${n.date}</div>
+          </div>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+function markAllRead(){
+  const notes = DB.notifications().map(n => ({...n, read:true}));
+  DB.saveNotifications(notes);
+  renderPage();
+  toast('All notifications marked as read.');
+}
+
+function toast(msg){
+  let t = document.getElementById('toast');
+  if(!t){ t = document.createElement('div'); t.id='toast'; t.className='toast'; document.body.appendChild(t); }
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ---------------- STUDENT DASHBOARD ---------------- */
+function renderStudent(){
+  const enrolls = DB.enrollments().filter(e => e.email === session.email);
+  const courses = DB.courses();
+  const myCourses = enrolls.map(e => ({...e, course: courses.find(c => c.id === e.courseId)})).filter(x=>x.course);
+
+  function pct(e){
+    const total = e.course.modules.reduce((s,m)=>s+m.lessons.length,0);
+    return total ? Math.round((e.completed.length/total)*100) : 0;
+  }
+  const avgPct = myCourses.length ? Math.round(myCourses.reduce((s,e)=>s+pct(e),0)/myCourses.length) : 0;
+  const completedCount = myCourses.filter(e => pct(e)===100).length;
+
+  document.getElementById('main-content').innerHTML = `
+    <div class="greet">
+      <div><span class="eyebrow" style="font-family:var(--font-mono);font-size:12px;color:var(--gold);">Module 6 — Dashboard</span>
+        <h1 style="font-size:26px;">Welcome back, ${session.name.split(' ')[0]}</h1>
+        <p class="mb-0">Here's where your paths stand today.</p></div>
+      <a href="courses.html" class="btn btn-primary">Browse courses</a>
+    </div>
+
+    <div class="kpis">
+      <div class="card kpi"><div class="val">${myCourses.length}</div><div class="lbl">Enrolled courses</div></div>
+      <div class="card kpi"><div class="val">${completedCount}</div><div class="lbl">Completed</div></div>
+      <div class="card kpi"><div class="val">${avgPct}%</div><div class="lbl">Average progress</div></div>
+      <div class="card kpi"><div class="val">${DB.notifications().filter(n=>!n.read).length}</div><div class="lbl">Unread notices</div></div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-pad" style="padding-bottom:0;"><h3 style="font-size:16px;">Continue learning</h3></div>
+        ${myCourses.length === 0 ? `
+          <div class="empty-state"><div class="mark-lg">◌</div>You haven't enrolled in any courses yet.
+            <div class="mt-16"><a href="courses.html" class="btn btn-primary btn-sm">Browse courses</a></div></div>` :
+          myCourses.map(e => `
+            <div class="continue-card">
+              <div class="thumb-sm"></div>
+              <div class="info">
+                <strong>${e.course.title}</strong>
+                <div class="bar"><div style="width:${pct(e)}%"></div></div>
+                <span class="text-sm text-muted">${pct(e)}% complete</span>
+              </div>
+              <a class="btn btn-outline btn-sm" href="learning.html?course=${e.course.id}">Resume</a>
+            </div>`).join('')
+        }
+      </div>
+      ${renderNotifications()}
+    </div>
+  `;
+}
+
+/* ---------------- ADMIN DASHBOARD ---------------- */
+function renderAdmin(){
+  const courses = DB.courses();
+  const enrolls = DB.enrollments();
+  const students = DB.users().filter(u => u.role === 'student');
+
+  document.getElementById('main-content').innerHTML = `
+    <div class="greet">
+      <div><span class="eyebrow" style="font-family:var(--font-mono);font-size:12px;color:var(--gold);">Module 6 — Admin dashboard</span>
+        <h1 style="font-size:26px;">Instructor overview</h1>
+        <p class="mb-0">Manage your catalogue and see how learners are progressing.</p></div>
+      <a href="courses.html#new" class="btn btn-primary">+ Add course</a>
+    </div>
+
+    <div class="kpis">
+      <div class="card kpi"><div class="val">${courses.length}</div><div class="lbl">Total courses</div></div>
+      <div class="card kpi"><div class="val">${students.length}</div><div class="lbl">Registered students</div></div>
+      <div class="card kpi"><div class="val">${enrolls.length}</div><div class="lbl">Total enrollments</div></div>
+      <div class="card kpi"><div class="val">${DB.notifications().filter(n=>!n.read).length}</div><div class="lbl">Unread notices</div></div>
+    </div>
+
+    <div class="two-col">
+      <div class="card admin-table-card">
+        <div class="card-pad" style="padding-bottom:0;"><h3 style="font-size:16px;">Courses</h3></div>
+        <div style="padding:0 8px 8px;">
+        <table>
+          <thead><tr><th>Title</th><th>Category</th><th>Enrollments</th><th></th></tr></thead>
+          <tbody>
+          ${courses.map(c => `
+            <tr>
+              <td>${c.title}</td>
+              <td><span class="badge badge-blue">${c.category}</span></td>
+              <td>${enrolls.filter(e=>e.courseId===c.id).length}</td>
+              <td><a class="text-sm" href="courses.html?edit=${c.id}">Edit</a></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+        </div>
+      </div>
+      ${renderNotifications()}
+    </div>
+  `;
+}
+
+function renderPage(){
+  session.role === 'admin' ? renderAdmin() : renderStudent();
+  if(location.hash === '#notifications'){
+    setTimeout(()=>document.getElementById('notifications')?.scrollIntoView({behavior:'smooth'}), 50);
+  }
+}
+renderPage();
+</script>
+</body>
+</html>
