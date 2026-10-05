@@ -1,0 +1,193 @@
+
+/* DB is now provided by store.js (LPStore) — no local copy needed here. */
+
+/* ---- seed demo data once ---- */
+(function seed(){
+  if(DB.users().length === 0){
+    DB.saveUsers([{ name:'Admin', email:'admin@learnpath.com', password:'admin123', role:'admin' }]);
+  }
+  if(DB.courses().length === 0){
+    DB.saveCourses([
+      { id:'c1', title:'UX Design Fundamentals', category:'Design', level:'Beginner', instructor:'Admin',
+        description:'Learn the core principles of user experience design, from research to wireframes.',
+        modules:[
+          { title:'Getting started', lessons:[{title:'Intro to UX', duration:'12 min'},{title:'User research basics', duration:'18 min'}]},
+          { title:'Designing', lessons:[{title:'Wireframing', duration:'22 min'},{title:'Usability testing', duration:'15 min'}]}
+        ]},
+      { id:'c2', title:'JavaScript for Beginners', category:'Development', level:'Beginner', instructor:'Admin',
+        description:'A hands-on introduction to JavaScript — variables, functions, and the DOM.',
+        modules:[
+          { title:'Fundamentals', lessons:[{title:'Variables & types', duration:'14 min'},{title:'Functions', duration:'16 min'}]},
+          { title:'Working with the browser', lessons:[{title:'The DOM', duration:'20 min'},{title:'Events', duration:'17 min'}]}
+        ]},
+      { id:'c3', title:'Data Analysis with Spreadsheets', category:'Data', level:'Intermediate', instructor:'Admin',
+        description:'Turn raw spreadsheet data into clear, defensible insights.',
+        modules:[
+          { title:'Cleaning data', lessons:[{title:'Finding errors', duration:'11 min'},{title:'Formatting', duration:'9 min'}]},
+          { title:'Analyzing', lessons:[{title:'Pivot tables', duration:'19 min'},{title:'Charts', duration:'13 min'}]}
+        ]},
+      { id:'c4', title:'Public Speaking Essentials', category:'Business', level:'Beginner', instructor:'Admin',
+        description:'Build the confidence and structure to speak clearly in front of any audience.',
+        modules:[
+          { title:'Foundations', lessons:[{title:'Managing nerves', duration:'10 min'},{title:'Structuring a talk', duration:'14 min'}]}
+        ]}
+    ]);
+  }
+  if(DB.notifications().length === 0){
+    DB.saveNotifications([
+      { id:'n1', to:'all', title:'Welcome to LearnPath', body:'Your account is ready — enroll in your first course to get started.', date:'2026-06-28', read:false },
+      { id:'n2', to:'all', title:'New course added', body:'Public Speaking Essentials is now available in Business.', date:'2026-06-30', read:false },
+      { id:'n3', to:'all', title:'Keep your streak going', body:'You have not opened a lesson in a few days — pick up where you left off.', date:'2026-07-02', read:true },
+    ]);
+  }
+})();
+
+const session = DB.session();
+if(!session){ location.href = 'auth.html'; }
+
+document.getElementById('user-chip').textContent = session.name + ' · ' + (session.role === 'admin' ? 'Admin' : 'Student');
+document.getElementById('logout-link').addEventListener('click', e => {
+  e.preventDefault();
+  DB.clearSession();
+  location.href = 'index.html';
+});
+
+lpRenderNav(session.role, 'rail');
+
+function renderNotifications(){
+  const notes = DB.notifications();
+  return `
+  <div class="card card-pad" id="notifications">
+    <div class="flex-between mb-0"><h3 style="font-size:16px;">Notifications</h3>
+      <button class="btn btn-outline btn-sm" onclick="markAllRead()">Mark all as read</button></div>
+    <div class="mt-16">
+      ${notes.map(n => `
+        <div class="notif-item ${n.read?'read':''}">
+          <div class="notif-dot"></div>
+          <div>
+            <div class="body-txt"><strong>${n.title}</strong> — ${n.body}</div>
+            <div class="time">${n.date}</div>
+          </div>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+function markAllRead(){
+  const notes = DB.notifications().map(n => ({...n, read:true}));
+  DB.saveNotifications(notes);
+  renderPage();
+  toast('All notifications marked as read.');
+}
+
+function toast(msg){
+  let t = document.getElementById('toast');
+  if(!t){ t = document.createElement('div'); t.id='toast'; t.className='toast'; document.body.appendChild(t); }
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ---------------- STUDENT DASHBOARD ---------------- */
+function renderStudent(){
+  const enrolls = DB.enrollments().filter(e => e.email === session.email);
+  const courses = DB.courses();
+  const myCourses = enrolls.map(e => ({...e, course: courses.find(c => c.id === e.courseId)})).filter(x=>x.course);
+
+  function pct(e){
+    const total = e.course.modules.reduce((s,m)=>s+m.lessons.length,0);
+    return total ? Math.round((e.completed.length/total)*100) : 0;
+  }
+  const avgPct = myCourses.length ? Math.round(myCourses.reduce((s,e)=>s+pct(e),0)/myCourses.length) : 0;
+  const completedCount = myCourses.filter(e => pct(e)===100).length;
+
+  document.getElementById('main-content').innerHTML = `
+    <div class="greet">
+      <div><span class="eyebrow" style="font-family:var(--font-mono);font-size:12px;color:var(--gold);">Module 6 — Dashboard</span>
+        <h1 style="font-size:26px;">Welcome back, ${session.name.split(' ')[0]}</h1>
+        <p class="mb-0">Here's where your paths stand today.</p></div>
+      <a href="courses.html" class="btn btn-primary">Browse courses</a>
+    </div>
+
+    <div class="kpis">
+      <div class="card kpi"><div class="val">${myCourses.length}</div><div class="lbl">Enrolled courses</div></div>
+      <div class="card kpi"><div class="val">${completedCount}</div><div class="lbl">Completed</div></div>
+      <div class="card kpi"><div class="val">${avgPct}%</div><div class="lbl">Average progress</div></div>
+      <div class="card kpi"><div class="val">${DB.notifications().filter(n=>!n.read).length}</div><div class="lbl">Unread notices</div></div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-pad" style="padding-bottom:0;"><h3 style="font-size:16px;">Continue learning</h3></div>
+        ${myCourses.length === 0 ? `
+          <div class="empty-state"><div class="mark-lg">◌</div>You haven't enrolled in any courses yet.
+            <div class="mt-16"><a href="courses.html" class="btn btn-primary btn-sm">Browse courses</a></div></div>` :
+          myCourses.map(e => `
+            <div class="continue-card">
+              <div class="thumb-sm"></div>
+              <div class="info">
+                <strong>${e.course.title}</strong>
+                <div class="bar"><div style="width:${pct(e)}%"></div></div>
+                <span class="text-sm text-muted">${pct(e)}% complete</span>
+              </div>
+              <a class="btn btn-outline btn-sm" href="learning.html?course=${e.course.id}">Resume</a>
+            </div>`).join('')
+        }
+      </div>
+      ${renderNotifications()}
+    </div>
+  `;
+}
+
+/* ---------------- ADMIN DASHBOARD ---------------- */
+function renderAdmin(){
+  const courses = DB.courses();
+  const enrolls = DB.enrollments();
+  const students = DB.users().filter(u => u.role === 'student');
+
+  document.getElementById('main-content').innerHTML = `
+    <div class="greet">
+      <div><span class="eyebrow" style="font-family:var(--font-mono);font-size:12px;color:var(--gold);">Module 6 — Admin dashboard</span>
+        <h1 style="font-size:26px;">Instructor overview</h1>
+        <p class="mb-0">Manage your catalogue and see how learners are progressing.</p></div>
+      <a href="courses.html#new" class="btn btn-primary">+ Add course</a>
+    </div>
+
+    <div class="kpis">
+      <div class="card kpi"><div class="val">${courses.length}</div><div class="lbl">Total courses</div></div>
+      <div class="card kpi"><div class="val">${students.length}</div><div class="lbl">Registered students</div></div>
+      <div class="card kpi"><div class="val">${enrolls.length}</div><div class="lbl">Total enrollments</div></div>
+      <div class="card kpi"><div class="val">${DB.notifications().filter(n=>!n.read).length}</div><div class="lbl">Unread notices</div></div>
+    </div>
+
+    <div class="two-col">
+      <div class="card admin-table-card">
+        <div class="card-pad" style="padding-bottom:0;"><h3 style="font-size:16px;">Courses</h3></div>
+        <div style="padding:0 8px 8px;">
+        <table>
+          <thead><tr><th>Title</th><th>Category</th><th>Enrollments</th><th></th></tr></thead>
+          <tbody>
+          ${courses.map(c => `
+            <tr>
+              <td>${c.title}</td>
+              <td><span class="badge badge-blue">${c.category}</span></td>
+              <td>${enrolls.filter(e=>e.courseId===c.id).length}</td>
+              <td><a class="text-sm" href="courses.html?edit=${c.id}">Edit</a></td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+        </div>
+      </div>
+      ${renderNotifications()}
+    </div>
+  `;
+}
+
+function renderPage(){
+  session.role === 'admin' ? renderAdmin() : renderStudent();
+  if(location.hash === '#notifications'){
+    setTimeout(()=>document.getElementById('notifications')?.scrollIntoView({behavior:'smooth'}), 50);
+  }
+}
+renderPage();
+// state management in action: if notifications change (e.g. markAllRead,
+// or another tab/page updating the store), this page reacts automatically
+DB.subscribe('notifications', renderPage);
